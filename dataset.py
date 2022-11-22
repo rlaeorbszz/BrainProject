@@ -26,18 +26,24 @@ class test_Dataset(Dataset):
         img = Image.open(img_path)
         img = self.transform(img)
     return img
-[] Data augmentation
+[] Data augmentation (brain mri ): 특징 : 흑백, deformation no
+: geometry ? / color ? 
+: sharpness (선명도)
 []  Batching process
-
+:multi-threading
+Batch
+1000 -> 128 model update -> 128 model update// iteration epoch
 '''
 
 import os
 from PIL import Image
 import torch
 import torchvision.transforms as transforms
-from torch.utils.data import Dataset
+import numpy as np
+import cv2 
+from torch.utils.data import Dataset, DataLoader
 
-int dir = 3
+
 class BrainMRIDataset(Dataset):
     def __init__(self, root_dir, is_train, transform):
         super().__init__()
@@ -74,6 +80,8 @@ class BrainMRIDataset(Dataset):
         gt = self.ground_truth[idx]
 
         x=Image.open(file_path) # pillow type
+        if len(x.mode)==1: 
+            x = x.convert(mode='RGB')
 
         x = self.transform(x)
         y = torch.LongTensor([gt]).squeeze() # int -> tensor type
@@ -84,10 +92,24 @@ class BrainMRIDataset(Dataset):
         return ret
 if __name__ == '__main__':
     transform = transforms.Compose([
-        transforms.ToTensor()
-    ])
+
+        transforms.Resize((224,224)),
+        transforms.ToTensor() # 0~255 -> 0~1 /unnormalization
+    ]) # c H W -> cv2 H W C (numpy)
 
     dataset = BrainMRIDataset('./ARCHIVE/Training',True,transform)
-    
+    #multi-thread
+    dataloader = DataLoader(dataset, batch_size=128, shuffle=True, num_workers=2)
+
+    for data in dataloader:
+        print(data['x'].shape)
+
+    '''
     for data in dataset:
         print(data['x'].shape, data['y']) #shape=[channel,height,width]
+
+        np_img = (data['x'] * 255).numpy().astype(np.uint8).transpose(1,2,0) # h w c
+
+        cv2.imwrite('./test.png',np_img)
+        break
+    '''
