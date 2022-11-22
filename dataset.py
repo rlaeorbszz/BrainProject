@@ -37,6 +37,7 @@ import torch
 import torchvision.transforms as transforms
 from torch.utils.data import Dataset
 
+int dir = 3
 class BrainMRIDataset(Dataset):
     def __init__(self, root_dir, is_train, transform):
         super().__init__()
